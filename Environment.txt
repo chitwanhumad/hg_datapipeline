@@ -1,0 +1,16 @@
+# create project folder
+D:\
+mkdir HGInsights
+cd HGInsights
+
+# set up virtual env
+print('using python 3.10..')
+python -m venv hg_venv
+
+# activate hg_venv
+hg_venv\Scripts\activate
+
+# install prefect
+pip install prefect
+
+
