@@ -15,7 +15,6 @@ cursor = conn.cursor()
 cursor.execute("SELECT TOP 10 * FROM customers")
 for row in cursor.fetchall():
     print(row)
-    print(row)
 
 @task()
 def extract_data():
