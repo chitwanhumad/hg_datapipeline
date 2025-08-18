@@ -2,16 +2,36 @@ from prefect import task, flow
 import pandas as pd
 import pyodbc
 
-# Connection string
-conn = pyodbc.connect(
-    "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=localhost\\SQLEXPRESS;"  # or "SERVER=your_server,1433"
-    "DATABASE=Campaign;"
-    "UID=sa;"                        # username
-    "PWD=unica*03;"              # password
-)
+# read configurations from config.ini
+from configparser import ConfigParser
+# CREATE OBJECT
+config = ConfigParser()
+config.read('D:\HGInsights\Git\hg_datapipeline\config.ini')
 
-cursor = conn.cursor()
+# Read configurations
+v_root_folder=config['DEFAULT']['v_root_folder']
+
+server=config['DATABASE']['server']
+user=config['DATABASE']['user']
+password=config['DATABASE']['password']
+print(server)
+# function Connection string
+def fn_connection (dbname):
+    conn = pyodbc.connect(
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        f"SERVER={server};"  
+        f"DATABASE={dbname};"
+        f"UID={user};"                        
+        f"PWD={password};"        
+    print(f"Connection successful to {dbname} DB!")
+    print('...')
+    )
+    return conn
+
+db_camp = fn_connection('Campaign')
+cursor = db_camp.cursor()
+
+
 cursor.execute("SELECT TOP 10 * FROM customers")
 for row in cursor.fetchall():
     print(row)
