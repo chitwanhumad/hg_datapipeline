@@ -3,12 +3,20 @@ import pandas as pd
 import pyodbc
 import os, sys
 import glob
+import datetime
+from pytz import timezone
 
 # read configurations from config.ini
 from configparser import ConfigParser
 # CREATE OBJECT
 config = ConfigParser()
 config.read('D:\HGInsights\Git\hg_datapipeline\config.ini')
+
+# current datetime id in int
+tz = 'Asia/Kolkata'
+now = datetime.datetime.now(timezone(tz))
+datetime_str = now.strftime("%Y%m%d%H%M")
+datetime_int = int(now.strftime("%H%M"))
 
 # Read configurations
 v_root_folder=config['DEFAULT']['v_root_folder']
@@ -114,7 +122,7 @@ def fn_log_message(runid,loglevel,messageline,function_name):
         print(f"Error inserting log: {e}")
 
 @task()
-def fn_extract_data():
+def fn_extract_load_data():
     try:
         # read source files
         v_source_folder = v_root_folder+'source/'
@@ -127,13 +135,22 @@ def fn_extract_data():
         if len(raw_files) > 0:
             for file in raw_files:
                 print(file)
+                file_name = os.path.splitext(os.path.basename(file))[0]
                 df_curr_data = pd.read_csv(file, header=0)
                 df_curr_data['runid'] = runid
-                df_customers = pd.concat([df_curr_data,df_customers])
+                df_customers = pd.concat([df_curr_data,df_customers], ignore_index=True)
 
         # To fix longer decimal values for TotalCharges
         df_customers['TotalCharges'] = pd.to_numeric(df_customers['TotalCharges'], errors='coerce')
-        df_customers = df_customers.astype({
+        
+        # detect if invalid customerid is present if so move the rows in the bad data
+        invalid_cusotmerids = df_customers["CustomerID"].apply(lambda x: str(x).isdigit())
+
+        # Split into good and bad dataframes
+        df_good_customers_data = df_customers[invalid_cusotmerids].copy()
+        df_bad_customers_data  = df_customers[~invalid_cusotmerids].copy()
+        
+        df_good_customers_data = df_good_customers_data.astype({
                                             "CustomerID": "int",
                                             "Age": "int",
                                             "Tenure": "int",
@@ -141,11 +158,12 @@ def fn_extract_data():
                                             "TotalCharges": "float", # to accect long float values 
                                             "runid": "int"
                                         })
-        df_customers['InternetService'] = df_customers['InternetService'].fillna('missing')
+        # use case transformaiton - 01 InternetService missing values to missing
+        df_good_customers_data['InternetService'] = df_good_customers_data['InternetService'].fillna('missing')
         
         print('')
-        if len(df_customers) > 0:
-            # assuming df_customers has same column order as raw_customers
+        if len(df_good_customers_data) > 0:
+            # assuming df_good_customers_data has same column order as raw_customers
             insert_sql = """
             INSERT INTO raw_customers (
                 CustomerID, Age, Gender, Tenure, MonthlyCharges,
@@ -155,7 +173,7 @@ def fn_extract_data():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
 
-            data = df_customers.to_records(index=False).tolist()
+            data = df_good_customers_data.to_records(index=False).tolist()
 
             # Insert all rows at once
             bronze_db_cursor.executemany(insert_sql, data)
@@ -167,6 +185,16 @@ def fn_extract_data():
             print(messageline)
             fn_log_message(runid,'INFO',messageline,'fn_extract_data')
 
+            # export good data of all files
+            filegooddata = f'{v_root_folder}archive/runid_{runid}_allfiles_gooddata_{datetime_str}.csv'
+            print(filegooddata)
+            df_good_customers_data.to_csv(filegooddata,index=False)
+
+        # export bad data of all files
+        if len(df_bad_customers_data) > 0:
+            filebaddata = f'{v_root_folder}archive/runid_{runid}_allfiles_baddata_{datetime_str}.csv'
+            df_bad_customers_data.to_csv(filebaddata, index=False)
+
         return 0
     except Exception as err_load_data:
         messageline = str(err_load_data)
@@ -175,13 +203,26 @@ def fn_extract_data():
         return 1
 
 @task 
-def fn_load_data():
-    print('Loading data into sqlserverdata base...')    
-    return 0
-
-@task 
 def fn_tranform_data():
-    print('Transfor data for reports...')
+    # read raw_customers data for transformations
+    query = """select customers.* from dbo.raw_customers customers,
+                (select max(runid) as max_runid , CustomerID from dbo.raw_customers group by CustomerID) as latest_customers
+                where customers.CustomerID = latest_customers.CustomerID 
+                and customers.runid = latest_customers.max_runid"""
+    bronze_db_cursor.execute(query)
+    
+    # Fetch all rows
+    rows_customers = bronze_db_cursor.fetchall()
+
+    columns = [column[0] for column in bronze_db_cursor.description]
+    df_latest_customers = pd.DataFrame.from_records(rows_customers, columns=columns)
+    print('========================== Transformations ======================')
+    print(df_latest_customers.head())
+    
+    # use case transformaiton - 02
+    # use case transformaiton - 03
+    # use case transformaiton - 04
+    # use case transformaiton - 05
     return 0
 
 @task 
@@ -199,10 +240,16 @@ def customer_bi():
         messageline = f'Runid {runid} Started.'
         fn_log_message(runid,'INFO',messageline,'customer_bi') 
 
-        out1 = fn_extract_data()
-        out2 = fn_load_data()
-        out3 = fn_tranform_data()
-        out4 = fn_model_data()
+        out1 = fn_extract_load_data()
+        if out1 == 0:
+            messageline = f'Raw data has been inserted successfully for runid {runid}.'
+            fn_log_message(runid,'INFO',messageline,'customer_bi') 
+        else:
+            messageline = f'Raw data could not laod runid {runid}, check for errors.'
+            fn_log_message(runid,'INFO',messageline,'customer_bi') 
+
+        out2 = fn_tranform_data()
+        out3 = fn_model_data()
         end_status = fn_run_status(runid, 'ended')
     else:
         messageline = 'Failed Start'
