@@ -47,11 +47,23 @@ GO
 USE  system_db;
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ach_runs' AND schema_id = SCHEMA_ID('dbo'))
-CREATE TABLE system_db.dbo.ach_runs (runid integer, createdate datetime, startdatetimeid datetime, enddatetimeid datetime, status varchar(20))
+CREATE TABLE system_db.dbo.ach_runs (
+    runid integer, 
+    createdate datetime, 
+    startdatetimeid datetime, 
+    enddatetimeid datetime, 
+    runstatus varchar(20)
+    )
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ach_logs' AND schema_id = SCHEMA_ID('dbo'))
-CREATE TABLE system_db.dbo.ach_logs (runid integer, loglevel varchar(30), message_line varchar(max), logtime datetime);
+CREATE TABLE system_db.dbo.ach_logs (
+    runid integer, 
+    loglevel varchar(30), 
+    message_line varchar(max), 
+    function_name varchar(50), 
+    logtime datetime DEFAULT GETDATE()
+    );
 GO
 
 DROP SEQUENCE IF EXISTS dbo.sq_runid;
@@ -68,11 +80,11 @@ CREATE TABLE dbo.raw_customers (
     MonthlyCharges DECIMAL(10,2),  
     ContractType   VARCHAR(20),    
     InternetService VARCHAR(20),   
-    TotalCharges   DECIMAL(12,2),  
+    TotalCharges   FLOAT,  
     TechSupport    VARCHAR(10),    
     Churn          VARCHAR(10),
-	inserttime	   DATETIME,
-    runid          INT	       
+    runid          INT,
+	inserttime	   DATETIME   DEFAULT GETDATE() 	       
 );
 
 USE silver_db;
@@ -90,8 +102,8 @@ CREATE TABLE dbo.customers (
     TechSupport    VARCHAR(10),    
     Churn          VARCHAR(10),
     Category       VARCHAR(10),
-	inserttime	   DATETIME,
-    runid          INT	     
+    runid          INT,
+	inserttime	   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
@@ -99,7 +111,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'customers_by_category' AND
 CREATE TABLE dbo.customers_by_category (
     Category       VARCHAR(10),
     total_customers INT,
-    last_refresh_time   DATETIME
+    last_refresh_time   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
@@ -107,7 +119,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'aggrevenue_by_contracts' A
 CREATE TABLE dbo.aggrevenue_by_contracts (
     ContractType       VARCHAR(10),
     agg_revenues       FLOAT,
-    last_refresh_time   DATETIME
+    last_refresh_time   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
@@ -116,7 +128,7 @@ CREATE TABLE dbo.aggrevenue_summary (
     ContractType       VARCHAR(10),
     InternetService    VARCHAR(10),
     agg_revenues       FLOAT,
-    last_refresh_time   DATETIME
+    last_refresh_time   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
@@ -128,5 +140,5 @@ CREATE TABLE dbo.customer_demographics (
     TechSupport    VARCHAR(10),    
     Category       VARCHAR(10),
 	inserttime	   DATETIME,
-    last_refresh_time   DATETIME	     
+    last_refresh_time   DATETIME DEFAULT GETDATE()  	     
 );

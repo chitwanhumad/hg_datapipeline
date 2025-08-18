@@ -13,3 +13,14 @@ hg_venv\Scripts\activate
 # install prefect
 pip install prefect
 
+# create root directory
+D:\
+mkdir D:\HGInsights\source\
+
+# create Archive directory
+mkdir D:\HGInsights\archive\
+
+# create Git directoty
+mkdir D:\HGInsights\Git\
+
+# Sync repository witn in Git folder
