@@ -94,7 +94,7 @@ CREATE TABLE dbo.customers (
     Age_band       VARCHAR(20),            
     Gender         VARCHAR(20),    
     Tenure         INT,            
-    Tenure_band    VARCHAR(20),         
+    Tenure_Range    VARCHAR(20),         
     MonthlyCharges DECIMAL(10,2),  
     ContractType   VARCHAR(20),    
     InternetService VARCHAR(20),   
@@ -103,6 +103,7 @@ CREATE TABLE dbo.customers (
     Churn          VARCHAR(10),
     Category       VARCHAR(10),
     runid          INT,
+    is_current     CHAR(1),
 	inserttime	   DATETIME DEFAULT GETDATE()  
 );
 
