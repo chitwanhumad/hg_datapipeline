@@ -110,36 +110,31 @@ CREATE TABLE dbo.customers (
 USE gold_db;
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'customers_by_category' AND schema_id = SCHEMA_ID('dbo'))
 CREATE TABLE dbo.customers_by_category (
-    Category       VARCHAR(10),
-    total_customers INT,
-    last_refresh_time   DATETIME DEFAULT GETDATE()  
-);
-
-USE gold_db;
-IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'aggrevenue_by_contracts' AND schema_id = SCHEMA_ID('dbo'))
-CREATE TABLE dbo.aggrevenue_by_contracts (
-    ContractType       VARCHAR(10),
-    agg_revenues       FLOAT,
+    Category       VARCHAR(50),
+    CustomerCount INT,
+    TotalRevenue  DECIMAL(12,2),
     last_refresh_time   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'aggrevenue_summary' AND schema_id = SCHEMA_ID('dbo'))
 CREATE TABLE dbo.aggrevenue_summary (
-    ContractType       VARCHAR(10),
-    InternetService    VARCHAR(10),
-    agg_revenues       FLOAT,
+    ContractType       VARCHAR(50),
+    InternetService    VARCHAR(50),
+    CustomerCount INT,
+    TotalRevenue  DECIMAL(12,2),
     last_refresh_time   DATETIME DEFAULT GETDATE()  
 );
 
 USE gold_db;
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'customer_demographics' AND schema_id = SCHEMA_ID('dbo'))
 CREATE TABLE dbo.customer_demographics (
-    CustomerID     INT,
     Age_band       VARCHAR(20),            
     Gender         VARCHAR(20),    
+    Tenure_Range   VARCHAR(10),
     TechSupport    VARCHAR(10),    
-    Category       VARCHAR(10),
-	inserttime	   DATETIME,
+    Churn          VARCHAR(10),
+    CustomerCount INT,
+    TotalRevenue  DECIMAL(12,2),
     last_refresh_time   DATETIME DEFAULT GETDATE()  	     
 );
