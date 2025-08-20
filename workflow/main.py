@@ -1,10 +1,12 @@
 from prefect import task, flow
+from prefect.server.schemas.schedules import IntervalSchedule
 import pandas as pd
 import pyodbc
 import os
 import sys
 import glob
 import datetime
+from datetime import timedelta
 from pytz import timezone
 import math
 
@@ -509,7 +511,7 @@ def fn_model_report_data():
     return 0
 
 
-@flow
+@flow (name='Customer Data Refresh')
 def customer_bi():
     print('')
     print('-----------------------------------------------------------------')
@@ -568,3 +570,9 @@ def customer_bi():
 if __name__ == "__main__":
     customer_bi()
     fn_disconnct_dbs()
+#    Create a deployment with an hourly schedule
+    # customer_bi.serve(
+    #     name="customer-bi-deploy",
+    #       schedule=IntervalSchedule(interval=timedelta(hours=1)) # it is not working, something has changed, need to check documentation.
+    # )
+
