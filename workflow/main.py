@@ -61,14 +61,17 @@ gold_db_cursor = gold_db_conn.cursor()
 
 # to initialize all db connections
 def fn_disconnct_dbs():
-    system_db_conn.close()
-    system_db_cursor.close()
-    bronze_db_conn.close()
-    bronze_db_cursor.close()
-    silver_db_conn.close()
-    silver_db_cursor.close()
-    gold_db_conn.close()
-    gold_db_cursor.close()
+    try:
+        system_db_conn.close()
+        system_db_cursor.close()
+        bronze_db_conn.close()
+        bronze_db_cursor.close()
+        silver_db_conn.close()
+        silver_db_cursor.close()
+        gold_db_conn.close()
+        gold_db_cursor.close()
+    except:
+        print('Closing cursor..')
 
 # to generate run id
 def fn_get_runid():
@@ -562,17 +565,19 @@ def customer_bi():
     else:
         messageline = f'Some tasks have got errors please check system_db.dbo.ach_logs table data for runid {runid}.'
         fn_log_message(runid, 'ERROR', messageline, 'customer_bi')
-
+    
+    fn_disconnct_dbs()
     print('-----------------------------------------------------------------')
     print('')
 
 
 if __name__ == "__main__":
-    customer_bi()
-    fn_disconnct_dbs()
+    #customer_bi()
+    
 #    Create a deployment with an hourly schedule
-    # customer_bi.serve(
-    #     name="customer-bi-deploy",
-    #       schedule=IntervalSchedule(interval=timedelta(hours=1)) # it is not working, something has changed, need to check documentation.
-    # )
+    customer_bi.serve(
+        name="customer-bi-deploy",
+        cron="0 * * * *"#,  # runs every hour
+        #work_pool_name="chitwan-work-pool"
+    )
 
