@@ -29,9 +29,10 @@ server = config['DATABASE']['server']
 user = config['DATABASE']['user']
 password = config['DATABASE']['password']
 
-# function Connection string
+# initialize runid
+runid = 0
 
-
+# function for DB Connection
 def fn_connection(dbname):
     conn = pyodbc.connect(
         "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -79,6 +80,10 @@ def fn_get_runid():
         'SELECT NEXT VALUE FOR system_db.dbo.sq_runid AS NewRunId;')
     runidrow = system_db_cursor.fetchone()
     runid = runidrow[0]
+    print('------------------------------------')
+    print('Current runid is:', runid)
+    print('------------------------------------')
+    print('')    
     return int(runid)
 
 # to create range dimension for 5 and 10 intervals
@@ -112,13 +117,7 @@ def fn_create_range_of_10(x):
     value_range = str(lower)+'-'+str(upper)
     return value_range
 ####### common functions definition ends #######
-
-
-runid = fn_get_runid()
-print('------------------------------------')
-print('Current runid is:', runid)
-print('------------------------------------')
-print('')
+# runid = fn_get_runid()
 
 # Function to get sql server datetime id
 
@@ -145,11 +144,11 @@ def fn_run_status(runid, status):
         """
         curr_datetime = fn_getsql_datetime()
 
-        if status == 'started':
+        if status == 'Run Started':
             system_db_cursor.execute(
                 insertsql, (runid, curr_datetime, curr_datetime, 0, status))
             system_db_cursor.connection.commit()
-        elif status == 'ended':
+        elif status == 'Run Ended':
             system_db_cursor.execute(updatesql, (curr_datetime, status, runid))
             system_db_cursor.connection.commit()
 
@@ -518,6 +517,9 @@ def fn_model_report_data():
 def customer_bi():
     print('')
     print('-----------------------------------------------------------------')
+
+    #customer_bi()
+    runid = fn_get_runid()    
     start_status = fn_run_status(runid, 'Run Started')
 
     if start_status == 0:
@@ -572,8 +574,7 @@ def customer_bi():
 
 
 if __name__ == "__main__":
-    #customer_bi()
-    
+
 #    Create a deployment with an hourly schedule
     customer_bi.serve(
         name="customer-bi-deploy",
