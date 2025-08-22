@@ -30,7 +30,7 @@ user = config['DATABASE']['user']
 password = config['DATABASE']['password']
 
 # initialize runid
-runid = 0
+
 
 # function for DB Connection
 def fn_connection(dbname):
@@ -177,7 +177,7 @@ def fn_log_message(runid, loglevel, messageline, function_name):
 
 
 @task()
-def fn_extract_load_data():
+def fn_extract_load_data(runid):
     print('')
     print('====================== Data Ingest process ======================')       
     try:
@@ -265,7 +265,7 @@ def fn_extract_load_data():
         return 1
 
 @task
-def fn_tranform_data():
+def fn_tranform_data(runid):
     try:
         # read raw_customers data for transformations
         query = f"""select customers.* from dbo.raw_customers customers,
@@ -374,7 +374,7 @@ def fn_tranform_data():
         return 1
 
 @task
-def fn_model_report_data():
+def fn_model_report_data(runid):
     print('')
     print('====================== Reporting Data Aggregation ======================')    
     try:
@@ -526,7 +526,7 @@ def customer_bi():
         messageline = f'Runid {runid} Started.'
         fn_log_message(runid, 'INFO', messageline, 'customer_bi')
 
-        out1 = fn_extract_load_data()
+        out1 = fn_extract_load_data(runid)
         if out1 == 0:
             messageline = f'Raw data has been inserted successfully for runid {runid}.'
             fn_log_message(runid, 'INFO', messageline, 'customer_bi')
@@ -535,7 +535,7 @@ def customer_bi():
             # propose an email alert to admin here
             fn_log_message(runid, 'INFO', messageline, 'customer_bi')
 
-        out2 = fn_tranform_data()
+        out2 = fn_tranform_data(runid)
         if out2 == 0:
             messageline = f'Tranformed data has been inserted successfully for runid {runid}.'
             fn_log_message(runid, 'INFO', messageline, 'customer_bi')
@@ -544,7 +544,7 @@ def customer_bi():
             # propose an email alert to admin here
             fn_log_message(runid, 'INFO', messageline, 'customer_bi')        
 
-        out3 = fn_model_report_data()
+        out3 = fn_model_report_data(runid)
 
         if out3 == 0:
             messageline = f'Reporting data has been inserted successfully for runid {runid}.'
